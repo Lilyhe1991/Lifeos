@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>人生管理系统 · LifeOS</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2334c759'/><rect x='22' y='15' width='8' height='32' fill='white'/><rect x='22' y='39' width='26' height='8' fill='white'/></svg>">
+<style>
+:root{
+  --blue:#0071e3; --green:#34c759; --orange:#ff9500; --purple:#af52de;
+  --cyan:#5ac8fa; --indigo:#5856d6; --red:#ff3b30; --yellow:#ffcc00;
+  --bg:#f5f5f7; --card:#ffffff; --line:#e5e5ea; --text:#1c1c1e; --sub:#8e8e93;
+  --radius:16px; --shadow:0 2px 12px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 30px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:"黑体","SimHei","Heiti SC","Microsoft YaHei","PingFang SC",sans-serif;
+  background:var(--bg); color:var(--text); font-size:16px;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input,select,textarea{font-family:inherit;font-size:15px;color:var(--text);}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#c7c7cc;border-radius:8px;}
+
+/* layout */
+#app{display:flex;height:100vh;overflow:hidden;}
+.sidebar{
+  width:220px;min-width:220px;background:#fff;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;transition:width .25s ease,min-width .25s ease;
+  overflow:hidden;
+}
+.sidebar.collapsed{width:64px;min-width:64px;}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 16px 12px;height:64px;}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:var(--green);flex:0 0 34px;
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:20px;}
+.brand .name{font-size:17px;font-weight:bold;white-space:nowrap;}
+.sidebar.collapsed .brand .name,.sidebar.collapsed .nav-label,.sidebar.collapsed .grp,
+.sidebar.collapsed .sync-box,.sidebar.collapsed .foot-label{display:none;}
+.nav{flex:1;overflow-y:auto;padding:6px 10px;}
+.grp{font-size:12px;color:var(--sub);padding:14px 10px 6px;letter-spacing:.5px;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;
+  color:#3a3a3c;margin-bottom:3px;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.nav-item:hover{background:var(--bg);}
+.nav-item.active{background:rgba(0,113,227,.12);color:var(--blue);font-weight:bold;}
+.nav-item .ico{width:22px;height:22px;flex:0 0 22px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.nav-label{font-size:15px;}
+.sidebar.collapsed .nav-item{justify-content:center;padding:10px 0;}
+
+.sync-box{margin:8px 10px;padding:10px;border-radius:12px;background:var(--bg);font-size:12px;}
+.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.sync-dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(52,199,89,.2);}
+.sync-dot.off{background:#c7c7cc;}
+.foot{padding:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;}
+.foot button{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;font-size:13px;color:var(--sub);}
+.foot button:hover{background:var(--bg);color:var(--text);}
+.sidebar.collapsed .foot button{justify-content:center;}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{height:64px;min-height:64px;display:flex;align-items:center;gap:12px;padding:0 20px;
+  background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+.topbar .title{font-size:19px;font-weight:bold;}
+.topbar .spacer{flex:1;}
+.icon-btn{width:38px;height:38px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;}
+.icon-btn:hover{background:#ececf0;}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:11px;padding:8px 12px;width:200px;}
+.search-box input{border:none;background:none;outline:none;width:100%;}
+.quick{background:var(--blue);color:#fff;border-radius:11px;padding:8px 14px;font-weight:bold;font-size:14px;}
+.quick:hover{filter:brightness(1.05);}
+
+.view{flex:1;overflow-y:auto;padding:22px;max-width:1100px;width:100%;margin:0 auto;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px;}
+.card h3{margin:0 0 14px;font-size:17px;display:flex;align-items:center;gap:8px;}
+.row{display:flex;gap:12px;flex-wrap:wrap;}
+.muted{color:var(--sub);font-size:13px;}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:bold;}
+.pill.b{background:rgba(0,113,227,.12);color:var(--blue);}
+.pill.g{background:rgba(52,199,89,.15);color:#1a8f3c;}
+.pill.o{background:rgba(255,149,0,.15);color:#c4740a;}
+.pill.p{background:rgba(175,82,222,.14);color:#8b34c0;}
+.pill.c{background:rgba(90,200,250,.2);color:#1a87b0;}
+.pill.r{background:rgba(255,59,48,.13);color:var(--red);}
+.pill.i{background:rgba(88,86,214,.14);color:var(--indigo);}
+
+input.f,select.f,textarea.f{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff;outline:none;transition:border .15s;}
+input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--blue);}
+textarea.f{resize:vertical;min-height:60px;}
+label.lb{display:block;font-size:13px;color:var(--sub);margin:10px 0 5px;font-weight:bold;}
+.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 16px;}
+.btn{background:var(--blue);color:#fff;border-radius:11px;padding:10px 18px;font-weight:bold;font-size:15px;}
+.btn:hover{filter:brightness(1.05);}
+.btn.g{background:var(--green);} .btn.o{background:var(--orange);} .btn.ghost{background:var(--bg);color:var(--text);}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:9px;}
+.btn.danger{background:var(--red);}
+
+table.t{width:100%;border-collapse:collapse;font-size:14px;}
+table.t th,table.t td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);}
+table.t th{color:var(--sub);font-weight:bold;font-size:13px;background:#fafafa;position:sticky;top:0;}
+table.t tr:hover td{background:#fafafa;}
+.twrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line);}
+.tabs{display:flex;gap:6px;background:var(--bg);padding:5px;border-radius:13px;width:fit-content;margin-bottom:16px;}
+.tabs button{padding:8px 16px;border-radius:10px;font-size:14px;color:var(--sub);font-weight:bold;}
+.tabs button.on{background:#fff;color:var(--text);box-shadow:var(--shadow);}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+.cal-cell{border:1px solid var(--line);border-radius:12px;min-height:78px;padding:8px;cursor:pointer;background:#fff;position:relative;overflow:hidden;}
+.cal-cell.dim{background:#fafafa;color:#c7c7cc;}
+.cal-cell.today{border-color:var(--blue);box-shadow:0 0 0 2px rgba(0,113,227,.15);}
+.cal-cell.sel{background:rgba(0,113,227,.06);}
+.cal-cell .d{font-size:13px;font-weight:bold;}
+.cal-cell .dot{position:absolute;bottom:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--blue);}
+.cal-cell .cnt{position:absolute;top:8px;right:8px;font-size:11px;background:var(--bg);border-radius:10px;padding:1px 6px;color:var(--sub);}
+
+/* todo */
+.todo{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid var(--line);margin-bottom:8px;}
+.todo .chk{width:22px;height:22px;border-radius:7px;border:2px solid #c7c7cc;flex:0 0 22px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;}
+.todo.done .chk{background:var(--green);border-color:var(--green);}
+.todo.done .tx{text-decoration:line-through;color:var(--sub);}
+.todo .tx{flex:1;}
+.todo .meta{font-size:12px;color:var(--sub);}
+.todo .over{color:var(--red);font-weight:bold;}
+
+/* funnel */
+.funnel{display:flex;gap:0;margin:6px 0 14px;flex-wrap:wrap;}
+.fstep{flex:1;min-width:120px;text-align:center;padding:14px 8px;color:#fff;position:relative;}
+.fstep:nth-child(1){background:var(--blue);} .fstep:nth-child(2){background:var(--cyan);}
+.fstep:nth-child(3){background:var(--orange);} .fstep:nth-child(4){background:var(--green);}
+.fstep .n{font-size:22px;font-weight:bold;} .fstep .t{font-size:13px;opacity:.95;}
+.fstep:not(:last-child)::after{content:"";position:absolute;right:-9px;top:50%;transform:translateY(-50%);
+  border:9px solid transparent;border-left-color:rgba(0,0,0,.12);z-index:2;}
+
+/* heatmap */
+.heat{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;}
+.heat .h{aspect-ratio:1;border-radius:4px;background:#ebebf0;}
+.h0{background:#ebebf0;}.h1{background:#cdeccd;}.h2{background:#9bdc9b;}.h3{background:#5fc46a;}.h4{background:var(--green);}
+
+/* modal */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
+.modal{background:#fff;border-radius:18px;box-shadow:var(--shadow-lg);max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:22px;}
+.modal.preview{max-width:420px;} /* mobile screenshot friendly */
+.modal h3{margin:0 0 14px;font-size:18px;}
+.modal .close{float:right;font-size:22px;color:var(--sub);line-height:1;}
+.overlay-hidden{display:none!important;}
+
+.banner{background:linear-gradient(90deg,rgba(0,113,227,.1),rgba(52,199,89,.1));border:1px solid rgba(0,113,227,.2);
+  border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.banner .x{margin-left:auto;color:var(--sub);}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1c1c1e;color:#fff;padding:12px 22px;border-radius:14px;z-index:200;box-shadow:var(--shadow-lg);font-size:14px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+.stat{display:flex;gap:14px;flex-wrap:wrap;}
+.stat .box{flex:1;min-width:130px;background:var(--bg);border-radius:14px;padding:16px;}
+.stat .box .v{font-size:24px;font-weight:bold;} .stat .box .k{font-size:13px;color:var(--sub);margin-top:4px;}
+
+.voice-bar{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:12px;padding:10px 14px;margin-top:8px;}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:var(--red);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+@media(max-width:720px){
+  .sidebar{position:relative;z-index:50;box-shadow:var(--shadow-lg);}
+  .sidebar.collapsed{display:none;}
+  .view{padding:14px;}
+  .search-box{width:130px;}
+  .topbar .title{font-size:16px;}
+  .heat{grid-template-columns:repeat(10,1fr);}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">L</div>
+      <div class="name">人生管理系统</div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sync-box">
+      <div><span class="sync-dot off" id="syncDot"></span><span id="syncLabel">仅本地</span></div>
+      <div class="muted" id="syncSub" style="margin-top:4px;">未连接云端</div>
+      <button id="btnSyncNow" style="margin-top:8px;width:100%;background:#fff;border-radius:8px;padding:6px;font-size:12px;color:var(--blue)">立即同步</button>
+    </div>
+    <div class="foot">
+      <button id="btnSettings">⚙️ <span class="foot-label">同步 / AI 设置</span></button>
+      <button id="btnExport">⬇️ <span class="foot-label">导出备份</span></button>
+      <button id="btnImport">⬆️ <span class="foot-label">导入备份</span></button>
+      <input type="file" id="fileImport" accept="application/json" class="overlay-hidden">
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="icon-btn" id="btnCollapse" title="折叠/展开侧边栏">☰</button>
+      <div class="title" id="viewTitle">日历与每日计划</div>
+      <div class="spacer"></div>
+      <div class="search-box">🔍<input id="globalSearch" placeholder="全局搜索…"></div>
+      <button class="quick" id="btnQuick">＋ 快捷</button>
+    </div>
+    <div class="view" id="view"></div>
+  </main>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============ 数据层 ============ */
+const KEY="lifeos_v1";
+const ACCOUNTS=["微信","支付宝","交行6521","农行","理财悄悄","理财金姐"];
+const CHANNELS=["酒店民宿浴场","头疗","私域","公域电商","经销商批发","外贸公司","外国客户"];
+const NEXT_ACTIONS=["成品寄出","打样","发送资料"];
+const EXP_CATS=["餐饮","交通","购物","娱乐","住房","借出","医疗","工资","理财","其他"];
+const INC_CATS=["工资","卖货收入","理财收入","红包/礼金","收回应收款","其他"];
+const SAMPLING_STAGES=["打样申请","样品在途","样品报价","客户下单"];
+const INGREDIENTS_DB=[
+  {n:"水",f:"溶剂/基底",c:"最常用载体，占比常最高",w:"注意防腐体系搭配"},
+  {n:"甘油",f:"保湿剂",c:"吸湿锁水，肤感滋润",w:"高浓度略黏"},
+  {n:"透明质酸钠",f:"保湿/成膜",c:"小分子补水大分子锁水",w:"遇阳离子易絮沉"},
+  {n:"烟酰胺",f:"美白/控油",c:"抑制黑色素转移、修护屏障",w:">5%可能泛红刺痛，需建立耐受"},
+  {n:"神经酰胺",f:"屏障修护",c:"补充细胞间脂质",w:"与油脂复配更稳定"},
+  {n:"角鲨烷",f:"润肤/修护",c:"亲肤不油腻",w:"氧化需加抗氧剂"},
+  {n:"泛醇(维生素B5)",f:"舒缓/修护",c:"促进愈合、保湿",w:"温热易降解"},
+  {n:"积雪草提取物",f:"舒缓抗敏",c:"镇定泛红",w:"注意农残与重金属"},
+  {n:"马齿苋提取物",f:"抗敏舒缓",c:"止痒镇定",w:"批次差异"},
+  {n:"茶多酚",f:"抗氧化",c:"清除自由基",w:"易变色需包裹"},
+  {n:"维生素C",f:"美白抗氧化",c:"提亮、促胶原",w:"不稳定易氧化，需避光低pH"},
+  {n:"维生素E",f:"抗氧化",c:"脂溶性抗氧协同",w:"—"},
+  {n:"水杨酸",f:"角质调理",c:"疏通毛孔、控油",w:"孕妇慎用，浓度受限"},
+  {n:"果酸(AHA)",f:"剥脱焕肤",c:"平滑角质",w:"光敏，需防晒"},
+  {n:"氨基酸表活",f:"温和清洁",c:"低刺激洁面",w:"过高pH失活"},
+  {n:"椰油酰胺丙基甜菜碱",f:"两性表活",f2:"增泡稳泡",c:"温和协同",w:"可能致敏"},
+  {n:"苯氧乙醇",f:"防腐",c:"广谱防腐",w:"高浓度刺痛"},
+  {n:"对羟基苯乙酮",f:"防腐助剂",c:"热稳定",w:"常复配乙基己基甘油"},
+  {n:"乙基己基甘油",f:"防腐助剂/保湿",c:"增强防腐",w:"—"},
+  {n:"卡波姆",f:"增稠/悬浮",c:"透明凝胶",w:"需中和成胶"},
+  {n:"黄原胶",f:"增稠",c:"稳定乳液",w:"高剪切降黏"},
+  {n:"鲸蜡硬脂醇",f:"乳化/赋脂",c:"膏体稠度",w:"—"},
+  {n:"乳化剂(PEG-100)",f:"乳化",c:"O/W乳化",w:"致敏争议"},
+  {n:"硅油(聚二甲基硅氧烷)",f:"丝滑肤感",c:"顺滑不黏",w:"环境争议"},
+  {n:"尿囊素",f:"舒缓/保湿",c:"促进修复",w:"—"},
+  {n:"红没药醇",f:"抗敏",c:"镇定消炎",w:"—"},
+  {n:"光甘草定",f:"美白",c:"强效抑制酪氨酸酶",w:"成本高"},
+  {n:"熊果苷",f:"美白",c:"抑制酪氨酸酶",w:"高浓度避光"},
+  {n:"视黄醇",f:"抗老",c:"促胶原、淡纹",w:"光敏刺激，孕妇慎用"},
+  {n:"辅酶Q10",f:"抗氧",c:"细胞能量",w:"易氧化"}
+];
+
+let S=load();
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.settings){d.settings.lock=d.settings.lock||null;d.settings.sync=d.settings.sync||{};d.settings.sync.supabase=d.settings.sync.supabase||{url:"",key:"",table:"lifeos_sync",row:"me"};d.settings.sync.rest=d.settings.sync.rest||{endpoint:"",token:""};d.settings.ai=d.settings.ai||{endpoint:"",key:"",model:"gpt-4o-mini"};d.ledger=d.ledger||{records:[]};d.ledger.balances=d.ledger.balances||{};return d;}}catch(e){}return def();}
+function def(){return{todos:[],customers:[],sampling:[],pending:[],formulas:[],ledger:{records:[],balances:{}},checkin:{},settings:{lock:null,sync:{mode:"off",supabase:{url:"",key:"",table:"lifeos_sync",row:"me"},rest:{endpoint:"",token:""}},ai:{endpoint:"",key:"",model:"gpt-4o-mini"}}};}
+let saveT,pushT;
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(S));
+  if(isCloudActive()){clearTimeout(pushT);pushT=setTimeout(()=>{cloudPush().then(()=>{cloudState.lastOk=true;cloudState.lastAt=Date.now();}).catch(()=>{cloudState.lastOk=false;}).finally(updateSyncStatus);},800);}
+}
+function softSave(){clearTimeout(saveT);saveT=setTimeout(save,300);}
+
+/* ============ 工具 ============ */
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const z=n=>String(n).padStart(2,"0");
+const ymd=d=>{d=d||new Date();return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());};
+const ym=d=>{d=d||new Date();return d.getFullYear()+"-"+z(d.getMonth()+1);};
+const wk=d=>["周日","周一","周二","周三","周四","周五","周六"][(d||new Date()).getDay()];
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms);};};
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
+function todayStr(){return ymd();}
+
+/* ============ 云同步（数据存于云端，多设备共用） ============ */
+let cloudState={lastOk:false,lastAt:0,mode:"off"};
+function updateSyncStatus(){
+  const active=isCloudActive();
+  const dot=$("#syncDot"),lab=$("#syncLabel"),sub=$("#syncSub");
+  if(!active){dot.className="sync-dot off";lab.textContent="仅本地";sub.textContent="未连接云端";cloudState.lastOk=false;return;}
+  if(cloudState.lastOk){dot.className="sync-dot on";lab.textContent="已连接云端";sub.textContent="同步于 "+new Date(cloudState.lastAt).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});}
+  else{dot.className="sync-dot off";lab.textContent="未连接";sub.textContent="端点不可达，点「立即同步」";}
+}
+function isCloudActive(){const s=S.settings.sync;return (s.mode==="supabase"&&s.supabase.url&&s.supabase.key)||(s.mode==="rest"&&s.rest.endpoint);}
+const SEED={url:"https://aqxwpwbrcnastpdkiobr.supabase.co",key:"sb_publishable_lQmzrP_FpKAvdD3U4Nfv9g_b4vRoVTd",table:"lifeos_sync",row:"me"};
+function applySeedIfNeeded(){
+  const s=S.settings.sync;
+  if(s.mode==="off"&&!s.supabase.url){s.mode="supabase";s.supabase={url:SEED.url,key:SEED.key,table:SEED.table,row:SEED.row};save();}
+}
+async function cloudPush(){
+  const s=S.settings.sync;
+  if(s.mode==="supabase"&&s.supabase.url&&s.supabase.key){
+    const {url,key,table,row}=s.supabase;
+    const r=await fetch(url.replace(/\/$/,"")+"/rest/v1/"+table,{method:"POST",
+      headers:{apikey:key,Authorization:"Bearer "+key,"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},
+      body:JSON.stringify({id:row||"me",data:S,updated_at:new Date().toISOString()})});
+    if(!r.ok)throw new Error("push "+r.status);
+    return true;
+  }
+  if(s.mode==="rest"&&s.rest.endpoint){
+    const r=await fetch(s.rest.endpoint,{method:"PUT",headers:{"Content-Type":"application/json",...(s.rest.token?{Authorization:"Bearer "+s.rest.token}:{})},body:JSON.stringify({ts:Date.now(),data:S})});
+    if(!r.ok)throw new Error("push "+r.status);
+    return true;
+  }
+  return false;
+}
+async function cloudPull(){
+  const s=S.settings.sync;
+  if(s.mode==="supabase"&&s.supabase.url&&s.supabase.key){
+    const {url,key,table,row}=s.supabase;
+    const r=await fetch(url.replace(/\/$/,"")+"/rest/v1/"+table+"?id=eq."+(row||"me")+"&select=data,updated_at",{headers:{apikey:key,Authorization:"Bearer "+key}});
+    if(!r.ok)throw new Error("pull "+r.status);
+    const j=await r.json();
+    if(j&&j[0]&&j[0].data)return {data:j[0].data,at:j[0].updated_at};
+    return null;
+  }
+  if(s.mode==="rest"&&s.rest.endpoint){
+    const r=await fetch(s.rest.endpoint,{headers:{...(s.rest.token?{Authorization:"Bearer "+s.rest.token}:{})}});
+    if(!r.ok)throw new Error("pull "+r.status);
+    const j=await r.json();
+    if(j&&j.data)return {data:j.data,at:j.ts};
+    return null;
+  }
+  return null;
+}
+async function syncNow(pushFirst){
+  if(!isCloudActive()){toast("未配置云端同步，请先到设置填写");return;}
+  try{
+    const localAt=Date.parse(S._syncedAt||0);
+    if(pushFirst){await cloudPush();S._syncedAt=new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(S));}
+    const remote=await cloudPull();
+    if(remote&&remote.data){
+      const remoteAt=Date.parse(remote.at||0);
+      if(remoteAt>localAt){S=Object.assign(def(),remote.data);S._syncedAt=remote.at;localStorage.setItem(KEY,JSON.stringify(S));}
+    }
+    cloudState.lastOk=true;cloudState.lastAt=Date.now();cloudState.mode=S.settings.sync.mode;
+    updateSyncStatus();toast("☁️ 同步成功");go(cur);
+  }catch(e){cloudState.lastOk=false;updateSyncStatus();toast("同步失败："+e.message);}
+}
+async function initSync(){
+  if(!isCloudActive())return;
+  try{
+    const remote=await cloudPull();
+    const localAt=Date.parse(S._syncedAt||0);
+    if(remote&&remote.data&&Date.parse(remote.at||0)>localAt){S=Object.assign(def(),remote.data);S._syncedAt=remote.at;localStorage.setItem(KEY,JSON.stringify(S));}
+    await cloudPush();S._syncedAt=S._syncedAt||new Date().toISOString();localStorage.setItem(KEY,JSON.stringify(S));
+    cloudState.lastOk=true;cloudState.lastAt=Date.now();
+  }catch(e){cloudState.lastOk=false;}
+}
+
+/* ============ AI ============ */
+async function callAI(system,user){
+  const a=S.settings.ai;
+  if(!a.endpoint.trim()||!a.key.trim())return null;
+  try{
+    const r=await fetch(a.endpoint.trim(),{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+a.key.trim()},
+      body:JSON.stringify({model:a.model||"gpt-4o-mini",messages:[{role:"system",content:system},{role:"user",content:user}],temperature:0.4})});
+    if(!r.ok)return null;
+    const j=await r.json();
+    return j.choices&&j.choices[0]&&j.choices[0].message?j.choices[0].message.content:null;
+  }catch(e){return null;}
+}
+
+/* ============ 导航 ============ */
+const MODULES=[
+  {id:"plan",grp:"计划",ico:"📅",name:"日历与每日计划"},
+  {id:"crm",grp:"客户",ico:"👤",name:"新客户登记"},
+  {id:"sample",grp:"客户",ico:"🧪",name:"客户打样清单"},
+  {id:"todoC",grp:"客户",ico:"📋",name:"客户待处理清单"},
+  {id:"formula",grp:"工具",ico:"⚗️",name:"配方解析工作台"},
+  {id:"ledger",grp:"财务",ico:"💰",name:"记账本"},
+  {id:"checkin",grp:"成长",ico:"✅",name:"每日10分钟打卡"},
+  {id:"weekly",grp:"成长",ico:"📊",name:"周度数据分析"}
+];
+let cur="plan";
+function buildNav(){
+  const nav=$("#nav");let html="",lastGrp="";
+  MODULES.forEach(m=>{
+    if(m.grp!==lastGrp){html+='<div class="grp">'+m.grp+'</div>';lastGrp=m.grp;}
+    html+='<div class="nav-item'+(m.id===cur?" active":"")+'" data-mod="'+m.id+'"><span class="ico">'+m.ico+'</span><span class="nav-label">'+m.name+'</span></div>';
+  });
+  nav.innerHTML=html;
+}
+function go(mod){
+  const m=MODULES.find(x=>x.id===mod);cur=mod;$("#viewTitle").textContent=m.name;buildNav();
+  const fn={plan:viewPlan,crm:viewCRM,sample:viewSample,todoC:viewTodoC,formula:viewFormula,ledger:viewLedger,checkin:viewCheckin,weekly:viewWeekly}[mod];
+  $("#view").innerHTML="";fn();
+}
+
+/* ============ 模块1: 日历与每日计划 ============ */
+let calMode="month", calY=new Date().getFullYear(), calM=new Date().getMonth(), selDay=ymd();
+function viewPlan(){
+  const v=$("#view");
+  v.innerHTML=`<div class="card">
+    <h3>📅 每日计划 · <span class="muted" style="font-weight:normal">${selDay} ${wk(new Date(selDay+'T00:00'))}</span></h3>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <input class="f" id="todoInput" placeholder="添加待办事项，回车保存…" style="flex:1;min-width:200px">
+      <input class="f" id="todoDate" type="date" value="${selDay}" style="width:160px">
+      <button class="btn" id="todoAdd">添加</button>
+    </div>
+    <div id="todoList"></div>
+  </div>
+  <div class="card">
+    <div class="cal-head">
+      <h3 style="margin:0">🗓️ ${calMode==="month"?calY+"年"+(calM+1)+"月":"年度视图 "+calY}</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost sm" id="calPrev">‹</button>
+        <button class="btn ghost sm" id="calToday">今天</button>
+        <button class="btn ghost sm" id="calNext">›</button>
+        <button class="btn ghost sm" id="calToggle">${calMode==="month"?"切到年":"切到月"}</button>
+      </div>
+    </div>
+    <div id="calBody"></div>
+  </div>
+  <div class="card"><h3>📦 历史完成（按日期折叠）</h3><div id="histList"></div></div>`;
+  renderTodoList();renderCal();renderHist();
+  $("#todoAdd").onclick=()=>addTodo();
+  $("#todoInput").onkeydown=e=>{if(e.key==="Enter")addTodo();};
+  $("#todoDate").onchange=e=>{selDay=e.target.value;renderTodoList();};
+  $("#calPrev").onclick=()=>{if(calMode==="month"){calM--;if(calM<0){calM=11;calY--;}}else calY--;renderCal();};
+  $("#calNext").onclick=()=>{if(calMode==="month"){calM++;if(calM>11){calM=0;calY++;}}else calY++;renderCal();};
+  $("#calToday").onclick=()=>{calY=new Date().getFullYear();calM=new Date().getMonth();selDay=ymd();renderCal();renderTodoList();};
+  $("#calToggle").onclick=()=>{calMode=calMode==="month"?"year":"month";go("plan");};
+}
+function addTodo(){
+  const tx=$("#todoInput").value.trim();if(!tx){toast("请输入内容");return;}
+  const dt=$("#todoDate").value||selDay;
+  S.todos.push({id:uid(),text:tx,date:dt,done:false,doneDate:null,kind:"normal"});
+  $("#todoInput").value="";save();renderTodoList();renderCal();
+}
+function activeTodosFor(day){
+  return S.todos.filter(t=>!t.done&&t.date<=day&&(t.date===day||t.date<day));
+}
+function renderTodoList(){
+  const tdy=todayStr();
+  const todayTodos=S.todos.filter(t=>!t.done&&t.date===selDay);
+  const over=S.todos.filter(t=>!t.done&&t.date<selDay);
+  const box=$("#todoList");let html="";
+  if(selDay===tdy&&over.length){
+    html+='<div class="muted" style="margin:4px 0 8px">⚠️ 逾期顺延（'+over.length+'）：</div>';
+    over.forEach(t=>html+=todoRow(t,true));
+  }
+  if(!todayTodos.length&&!over.length)html+='<div class="muted">暂无待办，添加一条吧。</div>';
+  todayTodos.forEach(t=>html+=todoRow(t,false));
+  box.innerHTML=html;
+  $$("#todoList .todo").forEach(r=>{
+    r.querySelector(".chk").onclick=()=>toggleTodo(r.dataset.id);
+    r.querySelector(".del").onclick=()=>delTodo(r.dataset.id);
+  });
+}
+function todoRow(t,over){
+  return `<div class="todo${t.done?" done":""}" data-id="${t.id}">
+    <div class="chk">${t.done?"✓":""}</div>
+    <div class="tx">${esc(t.text)}</div>
+    <div class="meta">${t.date}${over?' <span class="over">逾期</span>':""}${t.kind==="contact"?' <span class="pill c">联络</span>':""}</div>
+    <button class="icon-btn del" title="删除">🗑</button></div>`;
+}
+function toggleTodo(id){const t=S.todos.find(x=>x.id===id);if(!t)return;t.done=!t.done;t.doneDate=t.done?ymd():null;save();renderTodoList();renderHist();renderCal();}
+function delTodo(id){S.todos=S.todos.filter(x=>x.id!==id);save();renderTodoList();renderHist();renderCal();}
+function renderCal(){
+  const body=$("#calBody");if(!body)return;
+  if(calMode==="year"){renderYear();return;}
+  const first=new Date(calY,calM,1),startD=(first.getDay()+6)%7;
+  let html='<div class="cal-grid">';
+  ["一","二","三","四","五","六","日"].forEach(w=>html+='<div class="muted" style="text-align:center;font-size:12px">'+w+'</div>');
+  const total=new Date(calY,calM+1,0).getDate();
+  for(let i=0;i<startD;i++)html+='<div class="cal-cell dim"></div>';
+  for(let d=1;d<=total;d++){
+    const ds=calY+"-"+z(calM+1)+"-"+z(d);
+    const cnt=S.todos.filter(t=>!t.done&&t.date===ds).length;
+    const cls="cal-cell"+(ds===todayStr()?" today":"")+(ds===selDay?" sel":"");
+    html+=`<div class="${cls}" data-day="${ds}"><div class="d">${d}</div>${cnt?'<span class="cnt">'+cnt+'</span><span class="dot"></span>':""}</div>`;
+  }
+  html+="</div>";body.innerHTML=html;
+  $$("#calBody .cal-cell[data-day]").forEach(c=>c.onclick=()=>{selDay=c.dataset.day;renderCal();renderTodoList();});
+}
+function renderYear(){
+  const body=$("#calBody");let html="";
+  for(let mo=0;mo<12;mo++){
+    const total=new Date(calY,mo+1,0).getDate();
+    const startD=(new Date(calY,mo,1).getDay()+6)%7;
+    html+='<div style="margin-bottom:14px"><div class="muted" style="font-weight:bold;margin-bottom:6px">'+(mo+1)+'月</div><div class="cal-grid" style="gap:4px">';
+    for(let i=0;i<startD;i++)html+='<div style="aspect-ratio:1"></div>';
+    for(let d=1;d<=total;d++){const ds=calY+"-"+z(mo+1)+"-"+z(d);const cnt=S.todos.filter(t=>!t.done&&t.date===ds).length;
+      html+=`<div class="cal-cell" data-day="${ds}" style="min-height:0;padding:4px;border-radius:7px;cursor:pointer"><div class="d" style="font-size:11px">${d}</div>${cnt?'<span class="dot"></span>':""}</div>`;}
+    html+="</div></div>";
+  }
+  body.innerHTML=html;
+  $$("#calBody .cal-cell[data-day]").forEach(c=>c.onclick=()=>{selDay=c.dataset.day;calMode="month";calM=new Date(selDay).getMonth();calY=new Date(selDay).getFullYear();go("plan");});
+}
+function renderHist(){
+  const box=$("#histList");if(!box)return;
+  const done=S.todos.filter(t=>t.done&&t.doneDate).sort((a,b)=>b.doneDate.localeCompare(a.doneDate));
+  if(!done.length){box.innerHTML='<div class="muted">暂无已完成事项。</div>';return;}
+  const groups={};done.forEach(t=>{(groups[t.doneDate]=groups[t.doneDate]||[]).push(t);});
+  let html="";Object.keys(groups).forEach(d=>{
+    html+=`<details open><summary style="cursor:pointer;font-weight:bold;padding:8px 0">${d}（${groups[d].length}项）</summary>`;
+    groups[d].forEach(t=>html+=`<div class="todo done"><div class="chk">✓</div><div class="tx">${esc(t.text)}</div><div class="meta">${t.date}</div><button class="icon-btn del" title="删除">🗑</button></div>`);
+    html+="</details>";
+  });
+  box.innerHTML=html;
+  $$("#histList .del").forEach(b=>b.onclick=()=>delTodo(b.closest(".todo").dataset.id));
+}
+
+/* ============ 模块2: 新客户登记 CRM ============ */
+let crmFilter="all",crmSearch="";
+function viewCRM(){
+  const v=$("#view");
+  const addedToday=S.customers.some(c=>c.addTime===todayStr());
+  const banner=addedToday?"":`<div class="banner"><span>📌 今日（${todayStr()}）还没登记新客户，记得添加微信好友并打标签～</span><button class="x" id="banX">✕</button></div>`;
+  v.innerHTML=banner+`
+  <div class="card">
+    <h3>➕ 录入新客户</h3>
+    <div class="field-grid">
+      <div><label class="lb">客户名字 *</label><input class="f" id="c_name"></div>
+      <div><label class="lb">微信名</label><input class="f" id="c_wx"></div>
+      <div><label class="lb">渠道</label><select class="f" id="c_ch">${CHANNELS.map(c=>"<option>"+c+"</option>").join("")}</select></div>
+      <div><label class="lb">意向值（1-5）</label><input class="f" id="c_int" type="number" min="1" max="5" value="3"></div>
+      <div><label class="lb">目标客户</label><select class="f" id="c_tgt"><option value="是">是</option><option value="否">否</option></select></div>
+      <div><label class="lb">下一步动作</label><select class="f" id="c_act">${NEXT_ACTIONS.map(c=>"<option>"+c+"</option>").join("")}</select></div>
+      <div><label class="lb">下次联络时间</label><input class="f" id="c_next" type="date"></div>
+      <div><label class="lb">收件信息（名字/电话/地址）</label><input class="f" id="c_addr" placeholder="客户名字、联系电话、收件地址"></div>
+    </div>
+    <label class="lb">备注</label><textarea class="f" id="c_note" placeholder="备注"></textarea>
+    <label class="lb">沟通内容</label><textarea class="f" id="c_comm" placeholder="填写本次沟通内容…"></textarea>
+    <div style="margin-top:14px"><button class="btn g" id="c_save">保存客户</button></div>
+  </div>
+  <div class="card">
+    <div class="funnel">
+      <div class="fstep" data-f="new"><div class="n">${S.customers.length}</div><div class="t">新增好友</div></div>
+      <div class="fstep" data-f="target"><div class="n">${S.customers.filter(c=>c.target==="是").length}</div><div class="t">目标客户</div></div>
+      <div class="fstep" data-f="sample"><div class="n">${S.sampling.length}</div><div class="t">安排寄样</div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="tabs">
+        <button data-f="new" class="${crmFilter==="new"||crmFilter==="all"?"on":""}">新增好友</button>
+        <button data-f="target" class="${crmFilter==="target"?"on":""}">目标客户</button>
+        <button data-f="sample" class="${crmFilter==="sample"?"on":""}">安排寄样</button>
+      </div>
+      <input class="f" id="crmSearch" placeholder="搜索名字/微信名…" value="${esc(crmSearch)}" style="flex:1;min-width:160px">
+    </div>
+    <div class="twrap"><table class="t"><thead><tr>
+      <th>添加时间</th><th>客户</th><th>微信名</th><th>渠道</th><th>意向</th><th>目标</th><th>下一步</th><th>下次联络</th><th>操作</th>
+    </tr></thead><tbody id="crmBody"></tbody></table></div>
+  </div>`;
+  renderCRMTable();
+  $("#c_save").onclick=saveCustomer;
+  $("#banX")&&($("#banX").onclick=()=>$("#banX").closest(".banner").remove());
+  $$(".funnel .fstep,.tabs button").forEach(b=>b.onclick=()=>{crmFilter=b.dataset.f;viewCRM();});
+  $("#crmSearch").oninput=debounce(e=>{crmSearch=e.target.value;renderCRMTable();},200);
+}
+function filteredCustomers(){
+  let list=S.customers;
+  if(crmFilter==="target")list=list.filter(c=>c.target==="是");
+  else if(crmFilter==="sample")list=list.filter(c=>S.sampling.some(s=>s.customerId===c.id));
+  if(crmSearch)list=list.filter(c=>(c.name+c.wechat).includes(crmSearch));
+  return list.slice().sort((a,b)=>b.addTime.localeCompare(a.addTime));
+}
+function renderCRMTable(){
+  const body=$("#crmBody");if(!body)return;
+  const list=filteredCustomers();
+  if(!list.length){body.innerHTML='<tr><td colspan="9" class="muted">暂无客户</td></tr>';return;}
+  body.innerHTML=list.map(c=>`<tr>
+    <td>${c.addTime}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.wechat)}</td>
+    <td><span class="pill b">${esc(c.channel)}</span></td><td>${"★".repeat(+c.intention||0)}</td>
+    <td>${c.target==="是"?'<span class="pill g">是</span>':'<span class="pill">否</span>'}</td>
+    <td>${esc(c.nextAction)}</td><td>${c.nextContact||"—"}</td>
+    <td><button class="btn ghost sm" data-edit="${c.id}">详情</button></td></tr>`).join("");
+  $$("#crmBody [data-edit]").forEach(b=>b.onclick=()=>showCustomer(b.dataset.edit));
+}
+function saveCustomer(){
+  const name=$("#c_name").value.trim();if(!name){toast("请填写客户名字");return;}
+  const next=$("#c_next").value;
+  const c={id:uid(),addTime:todayStr(),name,wx:$("#c_wx").value.trim(),channel:$("#c_ch").value,
+    intention:$("#c_int").value||"3",target:$("#c_tgt").value,nextAction:$("#c_act").value,
+    nextContact:next,note:$("#c_note").value.trim(),comm:$("#c_comm").value.trim(),address:$("#c_addr").value.trim()};
+  S.customers.push(c);
+  // 下次联络 → 自动生成待办
+  syncContactTodos();
+  save();toast("客户已保存");viewCRM();
+  // 提示寄样
+  if(c.nextAction==="打样")toast("已登记，可在「客户打样清单」建单");
+}
+function syncContactTodos(){
+  S.todos=S.todos.filter(t=>!(t.kind==="contact"));
+  S.customers.forEach(c=>{if(c.nextContact){S.todos.push({id:uid(),text:"联络客户："+c.name,date:c.nextContact,done:false,doneDate:null,kind:"contact"});}});
+}
+function showCustomer(id){
+  const c=S.customers.find(x=>x.id===id);if(!c)return;
+  openModal(`<div class="modal"><span class="close" onclick="closeModal()">×</span>
+    <h3>客户详情 · ${esc(c.name)}</h3>
+    <div class="field-grid">
+      <div><label class="lb">客户名字</label><input class="f" id="e_name" value="${esc(c.name)}"></div>
+      <div><label class="lb">微信名</label><input class="f" id="e_wx" value="${esc(c.wechat)}"></div>
+      <div><label class="lb">渠道</label><select class="f" id="e_ch">${CHANNELS.map(x=>"<option"+(x===c.channel?" selected":"")+">"+x+"</option>").join("")}</select></div>
+      <div><label class="lb">意向值</label><input class="f" id="e_int" type="number" min="1" max="5" value="${c.intention}"></div>
+      <div><label class="lb">目标客户</label><select class="f" id="e_tgt"><option value="是"${c.target==="是"?" selected":""}>是</option><option value="否"${c.target==="否"?" selected":""}>否</option></select></div>
+      <div><label class="lb">下一步动作</label><select class="f" id="e_act">${NEXT_ACTIONS.map(x=>"<option"+(x===c.nextAction?" selected":"")+">"+x+"</option>").join("")}</select></div>
+      <div><label class="lb">下次联络</label><input class="f" id="e_next" type="date" value="${c.nextContact||""}"></div>
+      <div><label class="lb">收件信息</label><input class="f" id="e_addr" value="${esc(c.address)}"></div>
+    </div>
+    <label class="lb">备注</label><textarea class="f" id="e_note">${esc(c.note)}</textarea>
+    <label class="lb">沟通内容</label><textarea class="f" id="e_comm">${esc(c.comm)}</textarea>
+    <div style="margin-top:14px;display:flex;gap:10px"><button class="btn g" id="e_save">保存修改</button><button class="btn danger" id="e_del">删除</button></div>
+  </div>`);
+  $("#e_save").onclick=()=>{
+    Object.assign(c,{name:$("#e_name").value.trim(),wx:$("#e_wx").value.trim(),channel:$("#e_ch").value,
+      intention:$("#e_int").value,target:$("#e_tgt").value,nextAction:$("#e_act").value,
+      nextContact:$("#e_next").value,address:$("#e_addr").value.trim(),note:$("#e_note").value.trim(),comm:$("#e_comm").value.trim()});
+    syncContactTodos();save();closeModal();toast("已更新");viewCRM();
+  };
+  $("#e_del").onclick=()=>{if(!confirm("确定删除该客户？"))return;S.customers=S.customers.filter(x=>x.id!==id);S.sampling=S.sampling.filter(s=>s.customerId!==id);syncContactTodos();save();closeModal();viewCRM();};
+}
+
+/* ============ 模块3: 客户打样清单 ============ */
+let sampleStage="打样申请",sampleSearch="",curSampleId=null;
+function viewSample(){
+  const v=$("#view");
+  const counts=SAMPLING_STAGES.map(s=>S.sampling.filter(x=>x.status===s).length);
+  v.innerHTML=`
+  <div class="card">
+    <h3>🧪 打样清单 · 状态漏斗</h3>
+    <div class="funnel">
+      ${SAMPLING_STAGES.map((s,i)=>`<div class="fstep" data-st="${s}"><div class="n">${counts[i]}</div><div class="t">${s}</div></div>`).join("")}
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="tabs">${SAMPLING_STAGES.map(s=>`<button data-st="${s}" class="${sampleStage===s?"on":""}">${s}</button>`).join("")}</div>
+      <input class="f" id="sSearch" placeholder="搜索客户/产品…" value="${esc(sampleSearch)}" style="flex:1;min-width:160px">
+      <button class="btn" id="addSample">＋ 新增打样单</button>
+    </div>
+    <div class="twrap" style="margin-top:12px"><table class="t"><thead><tr>
+      <th>申请日期</th><th>客户</th><th>产品</th><th>料体结算价</th><th>预计首单</th><th>寄样日期</th><th>状态</th><th>操作</th>
+    </tr></thead><tbody id="sBody"></tbody></table></div>
+  </div>
+  <div class="card">
+    <h3>📦 待寄样清单</h3>
+    <div class="twrap"><table class="t"><thead><tr><th>申请日期</th><th>客户</th><th>产品</th><th>操作</th></tr></thead><tbody id="pendingBody"></tbody></table></div>
+  </div>`;
+  renderSample();
+  $("#addSample").onclick=openSampleForm;
+  $$(".funnel .fstep,.tabs button").forEach(b=>b.onclick=()=>{sampleStage=b.dataset.st;viewSample();});
+  $("#sSearch").oninput=debounce(e=>{sampleSearch=e.target.value;renderSample();},200);
+}
+function renderSample(){
+  const body=$("#sBody");if(!body)return;
+  let list=S.sampling.filter(s=>s.status===sampleStage);
+  if(sampleSearch)list=list.filter(s=>(s.customerName+s.product).includes(sampleSearch));
+  if(!list.length)body.innerHTML='<tr><td colspan="8" class="muted">暂无该阶段打样单</td></tr>';
+  else body.innerHTML=list.map(s=>`<tr>
+    <td>${s.applyDate}</td><td><b>${esc(s.customerName)}</b></td><td>${esc(s.product)}</td>
+    <td>${esc(s.settlePrice)||"—"}</td><td>${esc(s.firstQty)||"—"}</td><td>${s.shipDate?esc(s.shipDate)+" "+esc(s.shipWk):"—"}</td>
+    <td><span class="pill b">${esc(s.status)}</span></td>
+    <td><button class="btn ghost sm" data-stg="${s.id}">推进</button>${s.status==="样品在途"?' <button class="btn ghost sm" data-sign="'+s.id+'">签收</button>':""} <button class="btn ghost sm" data-edit="${s.id}">详情</button></td></tr>`).join("");
+  $$("#sBody [data-stg]").forEach(b=>b.onclick=()=>advanceSample(b.dataset.stg));
+  $$("#sBody [data-sign]").forEach(b=>b.onclick=()=>markSigned(b.dataset.sign));
+  $$("#sBody [data-edit]").forEach(b=>b.onclick=()=>showSample(b.dataset.edit));
+  // 待寄样
+  const pb=$("#pendingBody");const pend=S.sampling.filter(s=>s.status==="打样申请");
+  if(!pend.length)pb.innerHTML='<tr><td colspan="4" class="muted">暂无待寄样</td></tr>';
+  else pb.innerHTML=pend.map(s=>`<tr data-edit="${s.id}" style="cursor:pointer"><td>${s.applyDate}</td><td><b>${esc(s.customerName)}</b></td><td>${esc(s.product)}</td><td><button class="btn ghost sm" data-ship="${s.id}">去寄样</button></td></tr>`).join("");
+  $$("#pendingBody [data-edit]").forEach(b=>b.onclick=()=>showSample(b.dataset.edit));
+  $$("#pendingBody [data-ship]").forEach(b=>b.onclick=e=>{e.stopPropagation();shipSample(b.dataset.ship);});
+}
+function customerOptions(sel){
+  return '<option value="">— 选择客户 —</option><option value="__new__">＋ 新建客户</option>'+S.customers.map(c=>`<option value="${c.id}"${sel===c.id?" selected":""}>${esc(c.name)}</option>`).join("");
+}
+function openQuickCustomer(){
+  const root=$("#modalRoot");const m=document.createElement("div");m.className="mask";
+  m.innerHTML=`<div class="modal"><span class="close" id="qc_x">×</span>
+    <h3>新建客户</h3>
+    <div class="field-grid">
+      <div><label class="lb">客户名称 *</label><input class="f" id="qc_name"></div>
+      <div><label class="lb">微信/联系方式</label><input class="f" id="qc_wechat"></div>
+    </div>
+    <label class="lb">收件信息</label><textarea class="f" id="qc_addr" placeholder="客户名字、联系电话、收件地址"></textarea>
+    <div style="margin-top:14px"><button class="btn g" id="qc_save">保存客户</button></div>
+  </div>`;
+  root.appendChild(m);
+  const remove=()=>{const sel=$("#s_cust");if(sel&&sel.value==="__new__")sel.value="";if(m.parentNode)m.parentNode.removeChild(m);};
+  m.querySelector("#qc_x").onclick=remove;
+  m.onclick=e=>{if(e.target===m)remove();};
+  m.querySelector("#qc_save").onclick=()=>{
+    const nm=m.querySelector("#qc_name").value.trim();if(!nm){toast("请填客户名称");return;}
+    const id=uid();const addr=m.querySelector("#qc_addr").value.trim();
+    S.customers.push({id,name:nm,wechat:m.querySelector("#qc_wechat").value.trim(),address:addr,addTime:todayStr(),intent:"",target:"",nextAction:"",nextContact:"",comm:""});
+    save();remove();
+    const sel=$("#s_cust");if(sel){sel.innerHTML=customerOptions(id);const c=S.customers.find(x=>x.id===id);if(c&&c.address)$("#s_addr").value=c.address;}
+    toast("客户已创建并选中");
+  };
+}
+function openSampleForm(){
+  curSampleId=null;
+  openModal(`
+  <div class="modal">
+    <span class="close" onclick="closeModal()">×</span>
+    <h3>新增打样单</h3>
+    <div class="field-grid">
+      <div><label class="lb">客户 *（从客户列表搜索选择）</label><select class="f" id="s_cust">${customerOptions()}</select></div>
+      <div><label class="lb">产品名称 *</label><input class="f" id="s_prod"></div>
+      <div><label class="lb">料体结算价</label><input class="f" id="s_price" placeholder="20元/kg"></div>
+      <div><label class="lb">预计首单数量</label><input class="f" id="s_qty" placeholder="如 1000瓶"></div>
+      <div><label class="lb">寄样日期</label><input class="f" id="s_ship" type="date"></div>
+      <div><label class="lb">申请日期</label><input class="f" id="s_apply" type="date" value="${todayStr()}"></div>
+    </div>
+    <label class="lb">说明</label><textarea class="f" id="s_desc" placeholder="料体状态、颜色、功能效果、需添加的成分、不可添加的成分、其他说明"></textarea>
+    <label class="lb">客户收件信息</label><textarea class="f" id="s_addr" placeholder="客户名字、联系电话、收件地址"></textarea>
+    <div style="margin-top:14px;display:flex;gap:10px">
+      <button class="btn" id="s_submit">保存并加入待寄样</button>
+      <button class="btn ghost" id="s_preview">预览</button>
+    </div>
+  </div>`);
+  // 选客户时自动带出收件信息
+  $("#s_cust").onchange=e=>{
+    if(e.target.value==="__new__"){openQuickCustomer();return;}
+    const c=S.customers.find(x=>x.id===e.target.value);if(c&&c.address)$("#s_addr").value=c.address;
+  };
+  $("#s_submit").onclick=submitSample;
+  $("#s_preview").onclick=()=>previewSample();
+}
+function collectSampleForm(){
+  const cid=$("#s_cust").value;if(!cid){toast("请选择客户");return null;}
+  const c=S.customers.find(x=>x.id===cid);if(!c)return null;
+  const ship=$("#s_ship").value;
+  const id=curSampleId||uid();curSampleId=id;
+  return{id,customerId:cid,customerName:c.name,product:$("#s_prod").value.trim()||"(未命名)",
+    status:"打样申请",desc:$("#s_desc").value.trim(),settlePrice:$("#s_price").value.trim(),
+    firstQty:$("#s_qty").value.trim(),applyDate:$("#s_apply").value||todayStr(),
+    shipDate:ship,shipWk:ship?wk(new Date(ship+"T00:00")):"",
+    address:$("#s_addr").value.trim(),image:"",tracking:"",shipNote:"",signed:false};
+}
+function upsertSample(d){const i=S.sampling.findIndex(x=>x.id===d.id);if(i>=0)S.sampling[i]=d;else S.sampling.push(d);}
+function submitSample(){
+  const d=collectSampleForm();if(!d)return;
+  upsertSample(d);
+  // 同步收件信息到客户
+  const c=S.customers.find(x=>x.id===d.customerId);if(c&&d.address)c.address=d.address;
+  // 标记客户已安排寄样
+  save();closeModal();toast("已保存，进入待寄样清单");viewSample();
+}
+function showPreviewModal(d){
+  const root=$("#modalRoot");const m=document.createElement("div");m.className="mask";
+  m.innerHTML=`<div class="modal preview"><span class="close" id="pv_x">×</span>
+    <h3 style="text-align:center">打样申请单</h3>
+    <table class="t" style="font-size:13px">
+      <tr><td style="width:38%;color:#8e8e93">客户</td><td><b>${esc(d.customerName)}</b></td></tr>
+      <tr><td style="color:#8e8e93">产品名称</td><td>${esc(d.product)}</td></tr>
+      <tr><td style="color:#8e8e93">料体结算价</td><td>${esc(d.settlePrice)||"20元/kg"}</td></tr>
+      <tr><td style="color:#8e8e93">预计首单数量</td><td>${esc(d.firstQty)||"—"}</td></tr>
+      <tr><td style="color:#8e8e93">寄样日期</td><td>${d.shipDate?esc(d.shipDate)+" "+esc(d.shipWk):"—"}</td></tr>
+      <tr><td style="color:#8e8e93">申请日期</td><td>${esc(d.applyDate)}</td></tr>
+      <tr><td style="color:#8e8e93">说明</td><td>${esc(d.desc)||"—"}</td></tr>
+      <tr><td style="color:#8e8e93">收件信息</td><td>${esc(d.address)||"—"}</td></tr>
+    </table>
+    <div class="muted" style="text-align:center;margin-top:10px">LifeOS · ${todayStr()}</div>
+    <div style="margin-top:14px;text-align:center"><button class="btn" id="pv_close">关闭</button></div>
+  </div>`;
+  root.appendChild(m);
+  const remove=()=>{if(m.parentNode)m.parentNode.removeChild(m);};
+  m.querySelector("#pv_x").onclick=remove;
+  m.querySelector("#pv_close").onclick=remove;
+  m.onclick=e=>{if(e.target===m)remove();};
+}
+function previewSample(){
+  const d=collectSampleForm();if(!d)return;
+  upsertSample(d);
+  const c=S.customers.find(x=>x.id===d.customerId);if(c&&d.address)c.address=d.address;
+  save();toast("已自动保存");
+  showPreviewModal(d);
+}
+function markSigned(id){
+  const s=S.sampling.find(x=>x.id===id);if(!s)return;
+  s.signed=true;save();toast("✅ 已签收提醒：请尽快联系客户「"+s.customerName+"」确认样品！");
+  if(confirm("是否同时推进到「样品报价」阶段？")){s.status="样品报价";save();}
+  viewSample();
+}
+function advanceSample(id){
+  const s=S.sampling.find(x=>x.id===id);if(!s)return;
+  const i=SAMPLING_STAGES.indexOf(s.status);if(i<0)return;
+  if(i<SAMPLING_STAGES.length-1){s.status=SAMPLING_STAGES[i+1];save();toast("已推进至："+s.status);viewSample();}
+  else toast("已是最终阶段（客户下单）");
+}
+function showSample(id){
+  const s=S.sampling.find(x=>x.id===id);if(!s)return;
+  openModal(`<div class="modal"><span class="close" onclick="closeModal()">×</span>
+    <h3>打样详情 · ${esc(s.customerName)}</h3>
+    <div class="field-grid">
+      <div><label class="lb">客户</label><input class="f" value="${esc(s.customerName)}" disabled></div>
+      <div><label class="lb">产品</label><input class="f" id="v_prod" value="${esc(s.product)}"></div>
+      <div><label class="lb">料体结算价</label><input class="f" id="v_price" value="${esc(s.settlePrice)}"></div>
+      <div><label class="lb">预计首单</label><input class="f" id="v_qty" value="${esc(s.firstQty)}"></div>
+      <div><label class="lb">寄样日期</label><input class="f" id="v_ship" type="date" value="${s.shipDate||""}"></div>
+      <div><label class="lb">状态</label><select class="f" id="v_st">${SAMPLING_STAGES.map(x=>"<option"+(x===s.status?" selected":"")+">"+x+"</option>").join("")}</select></div>
+    </div>
+    <label class="lb">说明</label><textarea class="f" id="v_desc">${esc(s.desc)}</textarea>
+    <label class="lb">收件信息</label><textarea class="f" id="v_addr">${esc(s.address)}</textarea>
+    <label class="lb">快递公司</label><input class="f" id="v_co" value="${esc(s.courier||"")}" placeholder="如 顺丰 / 中通">
+    <label class="lb">快递单号</label><input class="f" id="v_no" value="${esc(s.tracking||"")}">
+    <div style="margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn ghost sm" id="v_track">查询物流</button>
+      ${s.lastTrackCheck?'<span class="muted">上次查询：'+new Date(s.lastTrackCheck).toLocaleString()+'</span>':''}
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn g" id="v_save">保存</button><button class="btn ghost" id="v_preview">预览</button><button class="btn danger" id="v_del">删除</button></div>
+  </div>`);
+  $("#v_save").onclick=()=>{const ship=$("#v_ship").value;Object.assign(s,{product:$("#v_prod").value.trim(),settlePrice:$("#v_price").value.trim(),firstQty:$("#v_qty").value.trim(),shipDate:ship,shipWk:ship?wk(new Date(ship+"T00:00")):"",status:$("#v_st").value,desc:$("#v_desc").value.trim(),address:$("#v_addr").value.trim(),courier:$("#v_co").value.trim(),tracking:$("#v_no").value.trim()});
+    const c=S.customers.find(x=>x.id===s.customerId);if(c&&s.address)c.address=s.address;save();closeModal();viewSample();};
+  $("#v_preview").onclick=()=>{const ship=$("#v_ship").value;showPreviewModal({id:s.id,customerName:s.customerName,product:$("#v_prod").value.trim()||s.product,settlePrice:$("#v_price").value.trim(),firstQty:$("#v_qty").value.trim(),applyDate:s.applyDate,shipDate:ship,shipWk:ship?wk(new Date(ship+"T00:00")):"",desc:$("#v_desc").value.trim(),address:$("#v_addr").value.trim()});};
+  $("#v_track").onclick=()=>{s.courier=$("#v_co").value.trim();s.tracking=$("#v_no").value.trim();s.lastTrackCheck=Date.now();save();openTracking(s.courier,s.tracking);};
+  $("#v_del").onclick=()=>{if(!confirm("删除该打样单？"))return;S.sampling=S.sampling.filter(x=>x.id!==id);save();closeModal();viewSample();};
+}
+function openTracking(co,no){
+  if(!no){toast("请先录入快递单号");return;}
+  window.open("https://www.kuaidi100.com/chaxun?nu="+encodeURIComponent(no),"_blank");
+  toast("已打开实时物流查询");
+}
+function shipSample(id){
+  const s=S.sampling.find(x=>x.id===id);if(!s)return;
+  openModal(`<div class="modal"><span class="close" onclick="closeModal()">×</span>
+    <h3>寄样 · ${esc(s.customerName)} / ${esc(s.product)}</h3>
+    <label class="lb">上传寄出样品图片</label>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+      <label class="btn ghost" for="ship_img" style="cursor:pointer">📎 选择文件</label>
+      <span id="ship_name" class="muted"></span>
+    </div>
+    <input type="file" id="ship_img" accept="image/*" style="display:none">
+    <div id="imgPrev" style="margin-top:8px"></div>
+    <label class="lb">快递公司</label><input class="f" id="ship_co" placeholder="如 顺丰 / 中通" value="${esc(s.courier||"")}">
+    <label class="lb">快递单号</label><input class="f" id="ship_no" placeholder="输入单号，平台可识别物流" value="${esc(s.tracking||"")}">
+    <label class="lb">备注（产品名称/编号识别结果）</label><textarea class="f" id="ship_note" placeholder="根据图片识别的寄样产品名称与编号，或手动填写">${esc(s.shipNote||"")}</textarea>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn g" id="ship_ok">标记已寄出</button><button class="btn ghost" id="ship_track">查询物流</button></div>
+  </div>`);
+  let imgData=s.image||"";
+  $("#ship_img").onchange=e=>{const f=e.target.files[0];if(!f)return;$("#ship_name").textContent=f.name;const rd=new FileReader();rd.onload=()=>{imgData=rd.result;$("#imgPrev").innerHTML='<img src="'+imgData+'" style="max-width:100%;border-radius:10px">';};rd.readAsDataURL(f);};
+  $("#ship_track").onclick=()=>{const co=$("#ship_co").value.trim(),no=$("#ship_no").value.trim();s.courier=co;s.tracking=no;s.lastTrackCheck=Date.now();save();openTracking(co,no);};
+  $("#ship_ok").onclick=()=>{
+    s.image=imgData;s.tracking=$("#ship_no").value.trim();s.courier=$("#ship_co").value.trim();s.shipNote=$("#ship_note").value.trim();
+    s.status="样品在途";s.shippedAt=Date.now();save();closeModal();toast("已寄出，进入「样品在途」");viewSample();
+  };
+}
+
+/* ============ 模块4: 客户待处理清单 ============ */
+function viewTodoC(){
+  const v=$("#view");
+  v.innerHTML=`<div class="card">
+    <h3>📋 客户待处理清单</h3>
+    <div class="field-grid">
+      <div><label class="lb">客户名字</label><input class="f" id="p_name"></div>
+      <div><label class="lb">待处理事由</label><input class="f" id="p_reason"></div>
+      <div><label class="lb">协助人</label><input class="f" id="p_asst"></div>
+    </div>
+    <div style="margin-top:14px"><button class="btn" id="p_add">添加</button></div>
+  </div>
+  <div class="card"><div class="twrap"><table class="t"><thead><tr><th>客户</th><th>待处理事由</th><th>协助人</th><th>状态</th><th>操作</th></tr></thead><tbody id="pBody"></tbody></table></div></div>`;
+  renderPending();
+  $("#p_add").onclick=()=>{
+    const n=$("#p_name").value.trim(),r=$("#p_reason").value.trim();if(!n||!r){toast("请填客户和事由");return;}
+    S.pending.push({id:uid(),name:n,reason:r,asst:$("#p_asst").value.trim(),done:false,at:Date.now()});
+    $("#p_name").value="";$("#p_reason").value="";$("#p_asst").value="";save();renderPending();
+  };
+}
+function renderPending(){
+  const body=$("#pBody");if(!body)return;
+  if(!S.pending.length){body.innerHTML='<tr><td colspan="5" class="muted">暂无待处理</td></tr>';return;}
+  body.innerHTML=S.pending.slice().sort((a,b)=>a.done-b.done).map(p=>`<tr>
+    <td><b>${esc(p.name)}</b></td><td>${esc(p.reason)}</td><td>${esc(p.asst)||"—"}</td>
+    <td>${p.done?'<span class="pill g">已处理</span>':'<span class="pill o">待处理</span>'}</td>
+    <td><button class="btn ghost sm" data-done="${p.id}">${p.done?"撤销":"完成"}</button> <button class="btn ghost sm" data-del="${p.id}">删</button></td></tr>`).join("");
+  $$("#pBody [data-done]").forEach(b=>b.onclick=()=>{const p=S.pending.find(x=>x.id===b.dataset.done);p.done=!p.done;save();renderPending();});
+  $$("#pBody [data-del]").forEach(b=>b.onclick=()=>{S.pending=S.pending.filter(x=>x.id!==b.dataset.del);save();renderPending();});
+}
+
+/* ============ 模块5: 配方解析工作台 ============ */
+function viewFormula(){
+  const v=$("#view");
+  v.innerHTML=`<div class="card">
+    <h3>⚗️ 配方解析工作台</h3>
+    <p class="muted">每行输入一个成分（可含百分比），系统解析功能与注意事项；已配置 AI 时给出深度分析。</p>
+    <textarea class="f" id="f_in" style="min-height:120px" placeholder="例如：&#10;水 80%&#10;甘油 5%&#10;烟酰胺 4%&#10;透明质酸钠 0.1%"></textarea>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button class="btn" id="f_parse">解析配方</button>
+      <button class="btn ghost" id="f_ai">AI 深度分析</button>
+    </div>
+    <div id="f_out" style="margin-top:16px"></div>
+  </div>
+  <div class="card"><h3>🕘 历史解析</h3><div id="f_hist"></div></div>`;
+  renderFormulaHist();
+  $("#f_parse").onclick=parseFormula;
+  $("#f_ai").onclick=aiFormula;
+}
+function parseFormula(){
+  const txt=$("#f_in").value.trim();if(!txt){toast("请输入成分");return;}
+  const lines=txt.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  let html='<table class="t"><thead><tr><th>成分</th><th>功能</th><th>说明</th><th>注意</th></tr></thead><tbody>';
+  let matched=0;
+  lines.forEach(ln=>{
+    const m=ln.match(/^(.*?)\s*([\d.]+)\s*%?\s*$/);const name=m?m[1].trim():ln;const pct=m?m[2]:"";
+    const ing=INGREDIENTS_DB.find(i=>name.includes(i.n)||i.n.includes(name));
+    if(ing)matched++;
+    html+=`<tr><td><b>${esc(name)}</b>${pct?' <span class="pill c">'+pct+'%</span>':''}</td>
+      <td>${ing?esc(ing.f):'<span class="muted">未知成分</span>'}</td>
+      <td>${ing?esc(ing.c):"—"}</td>
+      <td>${ing?('<span class="pill r" style="font-weight:normal">'+esc(ing.w)+'</span>'):"—"}</td></tr>`;
+  });
+  html+="</tbody></table>";
+  const warns=lines.map(ln=>{const m=ln.match(/^(.*?)\s*([\d.]+)\s*%?\s*$/);const name=m?m[1].trim():ln;const ing=INGREDIENTS_DB.find(i=>name.includes(i.n)||i.n.includes(name));return ing&&ing.w&&ing.w.indexOf("孕妇")>=0?name:null;}).filter(Boolean);
+  html+=`<div class="stat" style="margin-top:12px"><div class="box"><div class="v">${lines.length}</div><div class="k">输入成分数</div></div>
+    <div class="box"><div class="v">${matched}</div><div class="k">已识别</div></div>
+    <div class="box"><div class="v">${lines.length-matched}</div><div class="k">未识别</div></div></div>`;
+  if(warns.length)html+=`<div class="banner" style="margin-top:12px">⚠️ 含孕期慎用成分：${warns.join("、")}</div>`;
+  $("#f_out").innerHTML=html;
+  S.formulas.unshift({id:uid(),text:txt,at:Date.now()});if(S.formulas.length>50)S.formulas.pop();save();renderFormulaHist();
+}
+async function aiFormula(){
+  const txt=$("#f_in").value.trim();if(!txt){toast("请输入成分");return;}
+  $("#f_out").innerHTML='<div class="muted">AI 分析中…</div>';
+  const ai=await callAI("你是资深化妆品配方师，针对给定的成分列表，用简体中文给出专业解析：整体功效定位、配伍建议、风险点、优化方向。不超过300字。","成分：\n"+txt);
+  if(!ai){$("#f_out").innerHTML='<div class="banner">未配置 AI 或调用失败，已用本地解析（点「解析配方」）。</div>';return;}
+  $("#f_out").innerHTML='<div style="background:var(--bg);border-radius:12px;padding:14px;line-height:1.7">'+esc(ai).replace(/\n/g,"<br>")+'</div>';
+}
+function renderFormulaHist(){
+  const b=$("#f_hist");if(!b)return;
+  if(!S.formulas.length){b.innerHTML='<div class="muted">暂无历史</div>';return;}
+  b.innerHTML=S.formulas.slice(0,12).map(f=>`<div class="todo"><div class="tx" style="font-size:13px">${esc(f.text.replace(/\n/g," / "))}</div><div class="meta">${new Date(f.at).toLocaleString("zh-CN")}</div></div>`).join("");
+}
+
+/* ============ 模块6: 记账本 ============ */
+let ledTab="add",ledType="expense";
+function viewLedger(){
+  const v=$("#view");
+  const recs=S.ledger.records;
+  const sum=(arr)=>arr.reduce((a,b)=>a+(+b.amount||0),0);
+  const month=ym();
+  const mRec=recs.filter(r=>r.date.startsWith(month));
+  const inc=sum(mRec.filter(r=>r.type==="income"));
+  const exp=sum(mRec.filter(r=>r.type==="expense"));
+  const bal=inc-exp;
+  const accBal={};ACCOUNTS.forEach(a=>accBal[a]=(S.ledger.balances[a]||0));
+  recs.filter(r=>(r.type==="income"||r.type==="expense")&&r.account).forEach(r=>{if(accBal[r.account]!=null)accBal[r.account]+=(r.type==="income"?1:-1)*(+r.amount||0);});
+  const recv=sum(recs.filter(r=>r.type==="receivable"&&!r.done));
+  const pay=sum(recs.filter(r=>r.type==="payable"&&!r.done));
+  const totalBal=ACCOUNTS.reduce((a,b)=>a+accBal[b],0)+recv-pay;
+  v.innerHTML=`
+  <div class="card">
+    <div class="stat">
+      <div class="box"><div class="v" style="color:var(--green)">+${inc.toFixed(2)}</div><div class="k">本月收入</div></div>
+      <div class="box"><div class="v" style="color:var(--red)">-${exp.toFixed(2)}</div><div class="k">本月支出</div></div>
+      <div class="box"><div class="v">${bal.toFixed(2)}</div><div class="k">本月结余</div></div>
+      <div class="box"><div class="v" style="color:var(--blue)">${totalBal.toFixed(2)}</div><div class="k">总结余</div></div>
+    </div>
+    <div style="margin-top:14px"><b>各账户余额（点击查看流水）</b> <button class="btn ghost sm" id="balSet">设置余额</button></div>
+    <div class="row" style="margin-top:8px" id="accRow">
+      ${ACCOUNTS.map(a=>`<button class="pill b" data-acc="${a}" style="cursor:pointer;font-size:14px;padding:8px 14px">${a}：${accBal[a].toFixed(2)}</button>`).join("")}
+    </div>
+    <div class="muted" style="margin-top:8px">余额＝期初余额＋收支流水自动计算 ｜ 应收款(未收)：${recv.toFixed(2)} ｜ 应付款(未付)：${pay.toFixed(2)}</div>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      <button data-t="add" class="${ledTab==="add"?"on":""}">记一笔</button>
+      <button data-t="flow" class="${ledTab==="flow"?"on":""}">流水</button>
+    </div>
+    <div id="ledBody"></div>
+  </div>`;
+  $$(".tabs button").forEach(b=>b.onclick=()=>{ledTab=b.dataset.t;viewLedger();});
+  $$("#accRow [data-acc]").forEach(b=>b.onclick=()=>showAccountFlow(b.dataset.acc));
+  if($("#balSet"))$("#balSet").onclick=showBalSettings;
+  if(ledTab==="add")renderLedAdd();else renderLedFlow();
+}
+function renderLedAdd(){
+  const cats=ledType==="income"?INC_CATS:ledType==="expense"?EXP_CATS:[];
+  const accSel=ledType==="income"||ledType==="expense"?'<div><label class="lb">账户</label><select class="f" id="l_acc">'+ACCOUNTS.map(a=>"<option>"+a+"</option>").join("")+'</select></div>':"";
+  $("#ledBody").innerHTML=`
+    <div class="tabs" style="margin-bottom:14px">
+      <button data-ty="expense" class="${ledType==="expense"?"on":""}">支出</button>
+      <button data-ty="income" class="${ledType==="income"?"on":""}">收入</button>
+      <button data-ty="receivable" class="${ledType==="receivable"?"on":""}">应收</button>
+      <button data-ty="payable" class="${ledType==="payable"?"on":""}">应付</button>
+    </div>
+    <div class="field-grid">
+      <div><label class="lb">金额</label><input class="f" id="l_amt" type="number" step="0.01" placeholder="0.00"></div>
+      <div><label class="lb">分类</label><select class="f" id="l_cat">${cats.map(c=>"<option>"+c+"</option>").join("")}</select></div>
+      ${accSel}
+      <div><label class="lb">日期</label><input class="f" id="l_date" type="date" value="${todayStr()}"></div>
+    </div>
+    <label class="lb">备注</label><input class="f" id="l_note" placeholder="备注">
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn g" id="l_save">保存</button>
+      <button class="btn ghost" id="l_voice">🎤 语音/文本识别</button>
+    </div>
+    <div id="voiceBox"></div>`;
+  $$("#ledBody .tabs button").forEach(b=>b.onclick=()=>{ledType=b.dataset.ty;renderLedAdd();});
+  $("#l_save").onclick=()=>{
+    const amt=parseFloat($("#l_amt").value);if(!(amt>0)){toast("请输入有效金额");return;}
+    S.ledger.records.push({id:uid(),type:ledType,cat:$("#l_cat").value,account:(ledType==="income"||ledType==="expense")?$("#l_acc").value:"",amount:amt,date:$("#l_date").value||todayStr(),note:$("#l_note").value.trim(),done:ledType==="receivable"||ledType==="payable"?false:true});
+    $("#l_amt").value="";$("#l_note").value="";save();toast("已记录");viewLedger();
+  };
+  $("#l_voice").onclick=voiceLedger;
+}
+function renderLedFlow(){
+  let list=S.ledger.records.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(!list.length){$("#ledBody").innerHTML='<div class="muted">暂无流水</div>';return;}
+  $("#ledBody").innerHTML='<div class="twrap"><table class="t"><thead><tr><th>日期</th><th>类型</th><th>分类</th><th>账户</th><th>金额</th><th>备注</th></tr></thead><tbody>'+list.slice(0,200).map(r=>{
+    const col=r.type==="income"?"g":r.type==="expense"?"r":r.type==="receivable"?"c":"o";
+    const sign=r.type==="income"?"+":r.type==="expense"?"-":r.type==="receivable"?"应收":"应付";
+    return `<tr><td>${r.date}</td><td><span class="pill ${col}">${esc(r.type)}</span></td><td>${esc(r.cat)}</td><td>${esc(r.account)||"—"}</td><td>${sign}${(+r.amount).toFixed(2)}</td><td>${esc(r.note)||"—"}</td></tr>`;
+  }).join("")+'</tbody></table></div>';
+}
+function showAccountFlow(acc){
+  const list=S.ledger.records.filter(r=>(r.type==="income"||r.type==="expense")&&r.account===acc).sort((a,b)=>b.date.localeCompare(a.date));
+  const initBal=S.ledger.balances[acc]||0;
+  const flowBal=list.reduce((a,r)=>a+(r.type==="income"?1:-1)*(+r.amount||0),0);
+  const curBal=initBal+flowBal;
+  openModal(`<div class="modal"><span class="close" onclick="closeModal()">×</span><h3>${esc(acc)} 流水</h3>
+    <div class="stat" style="margin-bottom:10px">
+      <div class="box"><div class="v">${initBal.toFixed(2)}</div><div class="k">期初余额</div></div>
+      <div class="box"><div class="v" style="color:${flowBal>=0?'var(--green)':'var(--red)'}">${flowBal>=0?'+':''}${flowBal.toFixed(2)}</div><div class="k">收支合计</div></div>
+      <div class="box"><div class="v" style="color:var(--blue)">${curBal.toFixed(2)}</div><div class="k">当前余额</div></div>
+    </div>
+    ${list.length?('<div class="twrap"><table class="t"><thead><tr><th>日期</th><th>类型</th><th>分类</th><th>金额</th><th>备注</th></tr></thead><tbody>'+list.map(r=>`<tr><td>${r.date}</td><td>${r.type==="income"?'<span class="pill g">收入</span>':'<span class="pill r">支出</span>'}</td><td>${esc(r.cat)}</td><td>${r.type==="income"?"+":"-"}${(+r.amount).toFixed(2)}</td><td>${esc(r.note)||"—"}</td></tr>`).join("")+'</tbody></table></div>'):'<div class="muted">该账户暂无流水</div>'}
+    <div style="margin-top:14px;text-align:center"><button class="btn" onclick="closeModal()">关闭</button></div></div>`);
+}
+function showBalSettings(){
+  openModal(`<div class="modal"><span class="close" onclick="closeModal()">×</span><h3>账户期初余额</h3>
+    <p class="muted">设置各账户期初余额，加上后续收支流水自动得出当前余额。</p>
+    ${ACCOUNTS.map(a=>`<div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div style="width:96px">${a}</div><input class="f" id="bal_${a}" type="number" step="0.01" value="${S.ledger.balances[a]||0}"></div>`).join("")}
+    <div style="margin-top:14px"><button class="btn g" id="bal_save">保存</button></div></div>`);
+  $("#bal_save").onclick=()=>{ACCOUNTS.forEach(a=>S.ledger.balances[a]=parseFloat($("#bal_"+a).value)||0);save();closeModal();toast("已保存账户余额");viewLedger();};
+}
+function voiceLedger(){
+  const box=$("#voiceBox");
+  box.innerHTML=`<div class="voice-bar"><span class="rec-dot"></span><span>语音识别中…（或直接输入文本后点解析）</span><button class="btn sm" id="vs_stop">停止</button></div>
+    <textarea class="f" id="vs_text" style="margin-top:8px" placeholder="今天我微信支出30元吃饭"></textarea>
+    <div style="margin-top:8px"><button class="btn" id="vs_parse">解析并填入</button></div>`;
+  let rec=null;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){
+    rec=new SR();rec.lang="zh-CN";rec.interimResults=false;rec.onresult=e=>{$("#vs_text").value=e.results[0][0].transcript;};
+    rec.onerror=()=>{box.querySelector(".voice-bar span:nth-child(2)").textContent="语音不可用，请直接输入文本";};
+    try{rec.start();}catch(e){}
+    $("#vs_stop").onclick=()=>{try{rec.stop();}catch(e){}};
+  }else{
+    box.querySelector(".voice-bar span:nth-child(2)").textContent="当前浏览器不支持语音，请直接输入文本";
+  }
+  $("#vs_parse").onclick=()=>parseVoiceText($("#vs_text").value);
+}
+function parseVoiceText(txt){
+  txt=txt.trim();if(!txt)return;
+  let type="expense",amount=0,account="微信",cat="其他";
+  if(/收入|进账|赚|收/.test(txt))type="income";
+  if(/应收/.test(txt))type="receivable";
+  if(/应付|欠|待付/.test(txt))type="payable";
+  const m=txt.match(/([\d.]+)\s*(元|块)?/);if(m)amount=parseFloat(m[1]);
+  if(/微信/.test(txt))account="微信";else if(/支付宝/.test(txt))account="支付宝";else if(/交行|6521/.test(txt))account="交行6521";else if(/农行/.test(txt))account="农行";else if(/理财悄悄/.test(txt))account="理财悄悄";else if(/理财金姐/.test(txt))account="理财金姐";
+  const allCats=(type==="income"?INC_CATS:type==="expense"?EXP_CATS:[]);
+  for(const c of allCats){if(txt.includes(c)){cat=c;break;}}
+  if(type==="receivable"||type==="payable")account="";
+  // 填回表单
+  ledType=type;viewLedger();
+  setTimeout(()=>{
+    $("#l_amt").value=amount||"";
+    if($("#l_cat"))$("#l_cat").value=cat;
+    if($("#l_acc")&&account)$("#l_acc").value=account;
+    toast("已识别，请确认后保存");
+  },50);
+}
+
+/* ============ 模块7: 每日10分钟打卡 ============ */
+let timer=null,timerSec=0;
+function viewCheckin(){
+  const v=$("#view");
+  const tdy=todayStr();const sec=S.checkin[tdy]||0;const doneToday=sec>=600;
+  // heatmap 最近12周
+  let cells="";const today=new Date();
+  for(let i=83;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);const ds=ymd(d);const s=S.checkin[ds]||0;const lvl=s>=600?4:s>=300?3:s>=60?2:s>0?1:0;cells+=`<div class="h h${lvl}" title="${ds}: ${Math.round(s/60)}分钟"></div>`;}
+  // streak
+  let streak=0;const d2=new Date();
+  while(S.checkin[ymd(d2)]>0){streak++;d2.setDate(d2.getDate()-1);}
+  // month days done>=10min
+  let monthDone=0;const ymCur=ym();Object.keys(S.checkin).forEach(k=>{if(k.startsWith(ymCur)&&S.checkin[k]>=600)monthDone++;});
+  v.innerHTML=`<div class="card">
+    <h3>✅ 每日 10 分钟打卡</h3>
+    <div class="stat">
+      <div class="box"><div class="v">${Math.floor(sec/60)}:${z(sec%60)}</div><div class="k">今日时长${doneToday?' ✅':''}</div></div>
+      <div class="box"><div class="v">${streak}</div><div class="k">连续天数</div></div>
+      <div class="box"><div class="v">${monthDone}</div><div class="k">本月达标天数</div></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+      <button class="btn g" id="ck_start">${timer?"暂停":"开始计时"}</button>
+      ${timer?'<button class="btn danger" id="ck_stop">结束并记录</button>':''}
+      <span class="muted">目标：每天累计 ≥ 10 分钟</span>
+    </div>
+  </div>
+  <div class="card"><h3>🔥 打卡热力图（近 12 周）</h3><div class="heat">${cells}</div>
+    <div class="muted" style="margin-top:10px">深绿=达标(≥10min)，浅绿=有记录</div></div>`;
+  if($("#ck_start"))$("#ck_start").onclick=toggleTimer;
+  if($("#ck_stop"))$("#ck_stop").onclick=stopTimer;
+}
+function toggleTimer(){
+  if(timer){clearInterval(timer);timer=null;}else{timer=setInterval(()=>{timerSec++;},1000);}
+  viewCheckin();
+}
+function stopTimer(){
+  const tdy=todayStr();S.checkin[tdy]=(S.checkin[tdy]||0)+timerSec;
+  const got=timerSec;clearInterval(timer);timer=null;timerSec=0;save();
+  toast("已记录 "+Math.floor(got/60)+"分"+z(got%60)+"秒");
+  viewCheckin();
+}
+
+/* ============ 模块8: 周度数据分析 ============ */
+function weekRange(){
+  const now=new Date();const day=(now.getDay()+6)%7;const mon=new Date(now);mon.setDate(now.getDate()-day);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return{mon:ymd(mon),sun:ymd(sun),monD:mon,sunD:sun};
+}
+function viewWeekly(){
+  const w=weekRange();
+  const inWeek=d=>d>=w.mon&&d<=w.sun;
+  const todosDone=S.todos.filter(t=>t.done&&t.doneDate&&inWeek(t.doneDate)).length;
+  const todosOver=S.todos.filter(t=>!t.done&&t.date<w.sun).length;
+  const newCust=S.customers.filter(c=>inWeek(c.addTime)).length;
+  const targetCust=S.customers.filter(c=>c.target==="是").length;
+  const sampByStage=SAMPLING_STAGES.map(s=>S.sampling.filter(x=>x.status===s).length);
+  const pendingCnt=S.pending.filter(p=>!p.done).length;
+  const recs=S.ledger.records.filter(r=>inWeek(r.date));
+  const inc=recs.filter(r=>r.type==="income").reduce((a,b)=>a+(+b.amount||0),0);
+  const exp=recs.filter(r=>r.type==="expense").reduce((a,b)=>a+(+b.amount||0),0);
+  const checkDays=Object.keys(S.checkin).filter(k=>inWeek(k)&&S.checkin[k]>0).length;
+  const formulas=S.formulas.filter(f=>inWeek(ymd(new Date(f.at)))).length;
+  const html=`<div class="modal" style="max-width:600px">
+    <span class="close" onclick="closeModal()">×</span>
+    <h3>📊 周度数据分析</h3>
+    <div class="muted">统计区间：${w.mon} ~ ${w.sun}</div>
+    <div class="stat" style="margin-top:12px">
+      <div class="box"><div class="v">${todosDone}</div><div class="k">完成待办</div></div>
+      <div class="box"><div class="v" style="color:var(--red)">${todosOver}</div><div class="k">逾期未办</div></div>
+      <div class="box"><div class="v" style="color:var(--blue)">${newCust}</div><div class="k">新增客户</div></div>
+      <div class="box"><div class="v">${targetCust}</div><div class="k">目标客户</div></div>
+    </div>
+    <div class="stat" style="margin-top:10px">
+      <div class="box"><div class="v">${sampByStage.join("/")}</div><div class="k">打样漏斗(申/途/报/单)</div></div>
+      <div class="box"><div class="v" style="color:var(--orange)">${pendingCnt}</div><div class="k">待处理</div></div>
+      <div class="box"><div class="v" style="color:var(--green)">+${inc.toFixed(0)}</div><div class="k">本周收入</div></div>
+      <div class="box"><div class="v" style="color:var(--red)">-${exp.toFixed(0)}</div><div class="k">本周支出</div></div>
+    </div>
+    <div class="stat" style="margin-top:10px">
+      <div class="box"><div class="v">${checkDays}</div><div class="k">打卡天数</div></div>
+      <div class="box"><div class="v">${formulas}</div><div class="k">配方解析</div></div>
+    </div>
+    <div id="aiInsight" style="margin-top:14px"></div>
+    <div style="margin-top:14px;text-align:center"><button class="btn" id="wk_ai">获取 AI 洞察建议</button></div>
+  </div>`;
+  openModal(html);
+  $("#wk_ai").onclick=async()=>{
+    const prompt=`本周数据：完成待办${todosDone}，逾期${todosOver}，新增客户${newCust}，目标客户${targetCust}，打样漏斗[申请${sampByStage[0]}/在途${sampByStage[1]}/报价${sampByStage[2]}/下单${sampByStage[3]}]，待处理${pendingCnt}，收入${inc.toFixed(0)}，支出${exp.toFixed(0)}，打卡${checkDays}天，配方解析${formulas}次。请给出3条可执行建议。`;
+    $("#aiInsight").innerHTML='<div class="muted">生成中…</div>';
+    const ai=await callAI("你是销售管理顾问，基于每周数据给出简短、可执行的业务建议（简体中文，3条，每条不超40字）。",prompt);
+    if(!ai){$("#aiInsight").innerHTML='<div class="banner">未配置 AI，已用规则建议：① 跟进'+todosOver+'项逾期待办；② 推动'+sampByStage[1]+'个在途样品报价；③ 本周新增'+newCust+'客户需24h内联络。</div>';return;}
+    $("#aiInsight").innerHTML='<div style="background:var(--bg);border-radius:12px;padding:14px;line-height:1.8">'+esc(ai).replace(/\n/g,"<br>")+'</div>';
+  };
+}
+
+/* ============ 弹窗 / 设置 / 导入导出 ============ */
+function openModal(html){const r=$("#modalRoot");r.innerHTML='<div class="mask" onclick="if(event.target===this)closeModal()">'+html+'</div>';}
+function closeModal(){$("#modalRoot").innerHTML="";}
+function openSettings(){
+  const s=S.settings, sb=s.sync.supabase||{}, rt=s.sync.rest||{};
+  openModal(`<div class="modal"><span class="close" onclick="closeModal()">×</span><h3>⚙️ 同步 / AI 设置</h3>
+    <h3 style="font-size:15px;margin-top:6px">☁️ 云同步（数据存于云端，多设备共用）</h3>
+    <label class="lb">模式</label><select class="f" id="sy_mode">
+      <option value="off"${s.sync.mode==="off"?" selected":""}>关闭（仅本地）</option>
+      <option value="supabase"${s.sync.mode==="supabase"?" selected":""}>Supabase（推荐·免费·无需服务器）</option>
+      <option value="rest"${s.sync.mode==="rest"?" selected":""}>自定义 REST API</option></select>
+    <div id="sy_sb">
+      <label class="lb">Project URL</label><input class="f" id="sb_url" value="${esc(sb.url)}" placeholder="https://xxxx.supabase.co">
+      <label class="lb">Anon Key（公开，可客户端使用）</label><input class="f" id="sb_key" value="${esc(sb.key)}" placeholder="eyJ...">
+      <label class="lb">表名</label><input class="f" id="sb_tbl" value="${esc(sb.table||"lifeos_sync")}">
+      <label class="lb">行 ID（多端共用同一份数据）</label><input class="f" id="sb_row" value="${esc(sb.row||"me")}">
+      <div class="muted" style="margin-top:6px;line-height:1.7">建表 SQL（Supabase → SQL Editor 执行一次）：<br>
+        create table lifeos_sync(id text primary key, data jsonb, updated_at timestamptz default now());<br>
+        alter table lifeos_sync enable row level security;<br>
+        create policy pub on lifeos_sync for all using(true) with check(true);</div>
+    </div>
+    <div id="sy_rt">
+      <label class="lb">端点 URL（PUT 写入 / GET 读取，返回 {data}）</label><input class="f" id="rt_ep" value="${esc(rt.endpoint)}" placeholder="https://your-api/sync">
+      <label class="lb">Token（可选）</label><input class="f" id="rt_tk" value="${esc(rt.token)}" placeholder="Bearer token">
+    </div>
+    <h3 style="font-size:15px;margin-top:16px">🤖 AI 设置（配方解析 / 周报洞察）</h3>
+    <label class="lb">API 端点（OpenAI 兼容 /chat/completions）</label><input class="f" id="ai_ep" value="${esc(s.ai.endpoint)}" placeholder="https://api.openai.com/v1/chat/completions">
+    <label class="lb">API Key</label><input class="f" id="ai_key" value="${esc(s.ai.key)}" placeholder="sk-...">
+    <label class="lb">模型</label><input class="f" id="ai_model" value="${esc(s.ai.model)}" placeholder="gpt-4o-mini">
+    <div style="margin-top:16px;display:flex;gap:10px"><button class="btn g" id="sy_save">保存</button><button class="btn ghost" id="sy_chpw">🔒 修改密码</button><button class="btn ghost" id="sy_test">测试同步</button></div>
+    <div class="muted" style="margin-top:10px">配置后数据自动同步到云端，侧边栏显示「已连接云端」；未配置则仅本地。密码为客户端 PBKDF2 哈希后存于云端，明文不上传。</div>
+  </div>`);
+  const tog=()=>{const v=$("#sy_mode").value;$("#sy_sb").style.display=v==="supabase"?"block":"none";$("#sy_rt").style.display=v==="rest"?"block":"none";};
+  $("#sy_mode").onchange=tog;tog();
+  $("#sy_save").onclick=()=>{
+    S.settings.sync={mode:$("#sy_mode").value,
+      supabase:{url:$("#sb_url").value.trim(),key:$("#sb_key").value.trim(),table:$("#sb_tbl").value.trim()||"lifeos_sync",row:$("#sb_row").value.trim()||"me"},
+      rest:{endpoint:$("#rt_ep").value.trim(),token:$("#rt_tk").value.trim()}};
+    S.settings.ai={endpoint:$("#ai_ep").value.trim(),key:$("#ai_key").value.trim(),model:$("#ai_model").value.trim()||"gpt-4o-mini"};
+    save();closeModal();updateSyncStatus();toast("设置已保存，已启用云同步");
+  };
+  $("#sy_test").onclick=()=>syncNow(true);
+  $("#sy_chpw").onclick=()=>{closeModal();showSetPassword("修改登录密码","现有数据保留，仅更换密码",true);};
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="LifeOS备份_"+todayStr()+".json";a.click();
+  toast("已导出备份");
+}
+function importData(file){
+  const rd=new FileReader();rd.onload=()=>{
+    try{const d=JSON.parse(rd.result);if(!d.settings)throw 0;if(confirm("导入将覆盖当前数据，确认？")){S=d;save();toast("导入成功");go(cur);}}catch(e){toast("文件格式错误");}
+  };rd.readAsText(file);
+}
+
+/* ============ 全局搜索 ============ */
+function globalSearch(q){
+  q=q.trim().toLowerCase();if(!q)return;
+  const res=[];
+  S.customers.filter(c=>(c.name+c.wechat).toLowerCase().includes(q)).forEach(c=>res.push("👤 客户："+c.name));
+  S.sampling.filter(s=>(s.customerName+s.product).toLowerCase().includes(q)).forEach(s=>res.push("🧪 打样："+s.customerName+" / "+s.product));
+  S.todos.filter(t=>t.text.toLowerCase().includes(q)).forEach(t=>res.push("📅 待办："+t.text));
+  S.ledger.records.filter(r=>(r.note+r.cat).toLowerCase().includes(q)).forEach(r=>res.push("💰 记账："+r.cat+" "+r.note));
+  toast(res.length?("找到 "+res.length+" 条："+res.slice(0,3).join("；")):"无匹配结果");
+}
+
+/* ============ 快捷入口 ============ */
+function quickAdd(){
+  openModal(`<div class="modal"><span class="close" onclick="closeModal()">×</span><h3>＋ 快捷操作</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn" onclick="closeModal();go('plan');setTimeout(()=>$('#todoInput').focus(),100)">📅 添加待办</button>
+      <button class="btn" onclick="closeModal();go('crm')">👤 登记新客户</button>
+      <button class="btn" onclick="closeModal();go('ledger');ledTab='add';viewLedger()">💰 记一笔账</button>
+      <button class="btn" onclick="closeModal();go('sample');openSampleForm()">🧪 新建打样单</button>
+    </div></div>`);
+}
+
+/* ============ 初始化 ============ */
+function init(){
+  buildNav();updateSyncStatus();
+  $("#viewTitle").textContent=MODULES[0].name;
+  $("#nav").addEventListener("click",e=>{const it=e.target.closest(".nav-item");if(it&&it.dataset.mod)go(it.dataset.mod);});
+  $("#btnCollapse").onclick=()=>$("#sidebar").classList.toggle("collapsed");
+  $("#btnSettings").onclick=openSettings;
+  $("#btnExport").onclick=exportData;
+  $("#btnImport").onclick=()=>$("#fileImport").click();
+  $("#fileImport").onchange=e=>{if(e.target.files[0])importData(e.target.files[0]);};
+  $("#btnQuick").onclick=quickAdd;
+  $("#globalSearch").addEventListener("keydown",e=>{if(e.key==="Enter")globalSearch(e.target.value);});
+  $("#btnSyncNow").onclick=()=>syncNow(true);
+  // 启动：先拉取云端再渲染
+  boot();
+}
+function boot(){
+  applySeedIfNeeded();
+  initSync().finally(()=>{
+    updateSyncStatus();
+    loginGate();
+  });
+}
+
+/* ============ 登录锁（密码哈希存于云端，多端共用） ============ */
+function bufToB64(buf){const b=new Uint8Array(buf);let s="";for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s);}
+function b64ToBuf(b64){const s=atob(b64);const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return b.buffer;}
+async function pbkdf2(pwd,saltBuf){
+  const enc=new TextEncoder();
+  const km=await crypto.subtle.importKey("raw",enc.encode(pwd),"PBKDF2",false,["deriveBits"]);
+  const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt:saltBuf,iterations:100000,hash:"SHA-256"},km,256);
+  return new Uint8Array(bits);
+}
+async function setPassword(pwd){
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const bits=await pbkdf2(pwd,salt);
+  S.settings.lock={salt:bufToB64(salt),hash:bufToB64(bits)};
+  save();
+}
+async function verifyPassword(pwd){
+  const lock=S.settings.lock;if(!lock||!pwd)return false;
+  const salt=b64ToBuf(lock.salt);
+  const bits=await pbkdf2(pwd,salt);
+  return bufToB64(bits)===lock.hash;
+}
+function openLockModal(html){$("#modalRoot").innerHTML='<div class="mask">'+html+'</div>';}
+function loginGate(){
+  if(!(window.crypto&&crypto.subtle)){toast("当前环境不支持登录锁（需用 HTTPS 打开），已跳过");appReady();return;}
+  $("#app").style.visibility="hidden";
+  if(S.settings.lock&&S.settings.lock.hash)showUnlock();
+  else showSetPassword("首次使用，请设置登录密码","设置后密码哈希存于云端，多端共用同一密码",false);
+}
+function showUnlock(){
+  openLockModal(`<div class="modal preview" style="max-width:380px">
+    <h3 style="text-align:center">🔒 解锁</h3>
+    <p class="muted" style="text-align:center">请输入登录密码（云端同步，多端共用）</p>
+    <input class="f" id="lk_pwd" type="password" placeholder="登录密码" style="margin-top:10px">
+    <div style="margin-top:14px"><button class="btn" id="lk_go" style="width:100%">解锁</button></div>
+    <div style="margin-top:12px;text-align:center"><button class="btn ghost sm" id="lk_reset">忘记密码？重置（保留数据）</button></div>
+  </div>`);
+  const submit=async()=>{const pwd=$("#lk_pwd").value;if(!pwd){toast("请输入密码");return;}
+    if(await verifyPassword(pwd)){unlock();}else{toast("密码错误");$("#lk_pwd").value="";$("#lk_pwd").focus();}};
+  $("#lk_go").onclick=submit;
+  $("#lk_pwd").addEventListener("keydown",e=>{if(e.key==="Enter")submit();});
+  $("#lk_reset").onclick=async()=>{if(!confirm("将重新设置密码，现有业务数据保留。确定继续？"))return;showSetPassword("重新设置登录密码","现有数据保留，仅更换密码",true);};
+  setTimeout(()=>{$("#lk_pwd")&&$("#lk_pwd").focus();},50);
+}
+function showSetPassword(title,sub,isChange){
+  openLockModal(`<div class="modal preview" style="max-width:380px">
+    <h3 style="text-align:center">🔐 ${title}</h3>
+    <p class="muted" style="text-align:center">${sub||""}</p>
+    <input class="f" id="sp_pwd" type="password" placeholder="设置密码（至少4位）" style="margin-top:10px">
+    <input class="f" id="sp_cfm" type="password" placeholder="确认密码" style="margin-top:10px">
+    <div style="margin-top:14px"><button class="btn g" id="sp_go" style="width:100%">${isChange?"确认修改":"完成设置"}</button></div>
+  </div>`);
+  const submit=async()=>{const p=$("#sp_pwd").value,c=$("#sp_cfm").value;
+    if(p.length<4){toast("密码至少4位");return;}if(p!==c){toast("两次输入不一致");return;}
+    await setPassword(p);toast(isChange?"密码已修改":"密码已设置");unlock();};
+  $("#sp_go").onclick=submit;
+  $("#sp_cfm").addEventListener("keydown",e=>{if(e.key==="Enter")submit();});
+  setTimeout(()=>{$("#sp_pwd")&&$("#sp_pwd").focus();},50);
+}
+function unlock(){$("#app").style.visibility="visible";closeModal();appReady();}
+function appReady(){
+  go(cur);
+  if(!S.customers.some(c=>c.addTime===todayStr()))setTimeout(()=>toast("今日尚未登记新客户，记得添加～"),800);
+}
+window.closeModal=closeModal;window.go=go;
+init();
+</script>
+</body>
+</html>
