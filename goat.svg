@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 圆角背景 -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="#86D9B8"/>
+  <!-- 背景小装饰点 -->
+  <circle cx="78" cy="86" r="14" fill="#ffffff" opacity="0.55"/>
+  <circle cx="442" cy="118" r="10" fill="#ffffff" opacity="0.55"/>
+  <circle cx="430" cy="424" r="16" fill="#ffffff" opacity="0.45"/>
+  <circle cx="72" cy="432" r="10" fill="#ffffff" opacity="0.45"/>
+
+  <!-- 山羊 -->
+  <!-- 耳朵 -->
+  <ellipse cx="118" cy="252" rx="48" ry="30" fill="#F2DCC0" transform="rotate(-22 118 252)"/>
+  <ellipse cx="394" cy="252" rx="48" ry="30" fill="#F2DCC0" transform="rotate(22 394 252)"/>
+  <!-- 角 -->
+  <path d="M200 160 C186 122 196 96 216 82" stroke="#C9A26B" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <path d="M312 160 C326 122 316 96 296 82" stroke="#C9A26B" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- 头 -->
+  <ellipse cx="256" cy="282" rx="150" ry="140" fill="#FFF6E9" stroke="#EAD9BF" stroke-width="6"/>
+  <!-- 额头小刘海 -->
+  <path d="M212 168 q44 -34 88 0 q-22 -10 -44 -10 q-22 0 -44 10z" fill="#EAD9BF"/>
+  <!-- 头顶小花 -->
+  <g transform="translate(256 118)">
+    <circle cx="0" cy="-17" r="12" fill="#FF9DBB"/>
+    <circle cx="16" cy="-5" r="12" fill="#FF9DBB"/>
+    <circle cx="10" cy="14" r="12" fill="#FF9DBB"/>
+    <circle cx="-10" cy="14" r="12" fill="#FF9DBB"/>
+    <circle cx="-16" cy="-5" r="12" fill="#FF9DBB"/>
+    <circle cx="0" cy="0" r="10" fill="#FFE08A"/>
+  </g>
+  <!-- 眼睛 -->
+  <ellipse cx="206" cy="272" rx="23" ry="27" fill="#3A2E2A"/>
+  <ellipse cx="306" cy="272" rx="23" ry="27" fill="#3A2E2A"/>
+  <circle cx="214" cy="263" r="8" fill="#ffffff"/>
+  <circle cx="314" cy="263" r="8" fill="#ffffff"/>
+  <circle cx="200" cy="280" r="4" fill="#ffffff" opacity="0.8"/>
+  <circle cx="300" cy="280" r="4" fill="#ffffff" opacity="0.8"/>
+  <!-- 腮红 -->
+  <circle cx="158" cy="322" r="21" fill="#FFB3C1" opacity="0.75"/>
+  <circle cx="354" cy="322" r="21" fill="#FFB3C1" opacity="0.75"/>
+  <!-- 鼻口 -->
+  <ellipse cx="256" cy="332" rx="64" ry="48" fill="#FFE0D2"/>
+  <ellipse cx="231" cy="328" rx="7" ry="11" fill="#C98A78"/>
+  <ellipse cx="281" cy="328" rx="7" ry="11" fill="#C98A78"/>
+  <!-- 嘴 -->
+  <path d="M234 356 q22 20 44 0" fill="none" stroke="#C98A78" stroke-width="5" stroke-linecap="round"/>
+  <!-- 胡须 -->
+  <path d="M256 380 q-11 32 0 46 q11 -14 0 -46z" fill="#FFF6E9" stroke="#EAD9BF" stroke-width="3"/>
+</svg>
